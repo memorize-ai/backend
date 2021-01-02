@@ -1,0 +1,9 @@
+{
+	"functions": {
+		"source": ".",
+		"predeploy": [
+			"npm run lint -C \"$RESOURCE_DIR\"",
+			"npm run build -C \"$RESOURCE_DIR\""
+		]
+	}
+}
