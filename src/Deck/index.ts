@@ -1,13 +1,11 @@
 import * as admin from 'firebase-admin'
 import Batch from 'firestore-batch'
-import axios from 'axios'
 import { isEqual } from 'lodash'
 
 import decksClient from '../AppSearch/decks'
 import User from '../User'
 import Section from '../Section'
 import { storageUrl } from '../utils'
-import { PRERENDER_TOKEN } from '../constants'
 
 const firestore = admin.firestore()
 const storage = admin.storage().bucket()
@@ -371,12 +369,6 @@ export default class Deck {
 	deleteIndex = () =>
 		decksClient.deleteIndices(this.id)
 	
-	cache = () =>
-		axios.post('https://api.prerender.io/recache', {
-			prerenderToken: PRERENDER_TOKEN,
-			url: this.url
-		})
-	
 	wasUpdatedByUser = (newDeck: Deck) => !(
 		isEqual(this.topics, newDeck.topics) &&
 		this.hasImage === newDeck.hasImage &&
@@ -400,24 +392,6 @@ export default class Deck {
 		this.numberOfCurrentUsers === newDeck.numberOfCurrentUsers &&
 		this.creatorId === newDeck.creatorId &&
 		this.score === newDeck.score
-	)
-	
-	shouldCache = (newDeck: Deck) => !(
-		this.slugId === newDeck.slugId &&
-		this.slug === newDeck.slug &&
-		isEqual(this.topics, newDeck.topics) &&
-		this.hasImage === newDeck.hasImage &&
-		this.name === newDeck.name &&
-		this.subtitle === newDeck.subtitle &&
-		this.description === newDeck.description &&
-		this.numberOfRatings === newDeck.numberOfRatings &&
-		this.averageRating === newDeck.averageRating &&
-		this.numberOfCards === newDeck.numberOfCards &&
-		this.numberOfDownloads === newDeck.numberOfDownloads &&
-		this.numberOfCards === newDeck.numberOfCards &&
-		this.numberOfUnsectionedCards === newDeck.numberOfUnsectionedCards &&
-		this.numberOfCurrentUsers === newDeck.numberOfCurrentUsers &&
-		this.creatorId === newDeck.creatorId
 	)
 	
 	shouldUpdateCanPostCard = (newDeck: Deck) =>

@@ -15,9 +15,6 @@ export default functions.firestore.document('decks/{deckId}').onUpdate(cauterize
 	if (oldDeck.shouldIndex(newDeck))
 		promises.push(newDeck.index())
 	
-	if (oldDeck.shouldCache(newDeck))
-		promises.push(newDeck.cache())
-	
 	if (oldDeck.shouldUpdateCanPostCard(newDeck))
 		promises.push(newDeck.updateCanPostCard())
 	
