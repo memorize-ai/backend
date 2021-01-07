@@ -1,4 +1,4 @@
-import functions from 'firebase-functions'
+import * as functions from 'firebase-functions'
 import admin from 'firebase-admin'
 
 import { DECK_DUE_CARD_COUNT_SCHEDULE } from '../../constants'
