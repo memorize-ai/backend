@@ -10,8 +10,7 @@
 		"lint": "tsc --noEmit && eslint .",
 		"format": "prettier --write .",
 		"logs": "firebase functions:log",
-		"build": "tsc",
-		"deploy": "firebase deploy --only functions"
+		"build": "tsc"
 	},
 	"dependencies": {
 		"@elastic/app-search-node": "^7.10.1",
