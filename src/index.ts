@@ -6,8 +6,8 @@ initializeApp({
 	storageBucket: DEFAULT_STORAGE_BUCKET
 })
 
-export { default as app } from './App'
-
+export * from './API/functions'
+export * from './TransferDeck/functions'
 export * from './User/functions'
 export * from './Deck/functions'
 export * from './Section/functions'

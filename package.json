@@ -6,6 +6,7 @@
 		"node": "10"
 	},
 	"scripts": {
+		"test": "tsc --noEmit",
 		"lint": "tslint --project tsconfig.json",
 		"build": "tsc",
 		"deploy": "firebase deploy --only functions",

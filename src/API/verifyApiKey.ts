@@ -1,19 +1,18 @@
 import * as admin from 'firebase-admin'
 import { RequestHandler } from 'express'
 
-import { SUPPORT_EMAIL } from '../../constants'
+import { SUPPORT_EMAIL } from '../constants'
 
 const { FieldValue } = admin.firestore
 const firestore = admin.firestore()
 
-export const verifyApiKey: RequestHandler = async ({ query: { key } }, res, next) => {
+const verifyApiKey: RequestHandler = async ({ query: { key } }, res, next) => {
 	if (typeof key !== 'string') {
 		res.status(400).send('You must send your API key in the "key" query parameter')
 		return
 	}
 	
-	const doc = firestore.doc(`apiKeys/${key}`)
-	const snapshot = await doc.get()
+	const snapshot = await firestore.doc(`apiKeys/${key}`).get()
 	
 	if (!snapshot.exists) {
 		res.status(401).send('Invalid API key')
@@ -25,6 +24,11 @@ export const verifyApiKey: RequestHandler = async ({ query: { key } }, res, next
 		return
 	}
 	
-	await doc.update({ requests: FieldValue.increment(1) })
+	await snapshot.ref.update({
+		requests: FieldValue.increment(1)
+	})
+	
 	next()
 }
+
+export default verifyApiKey
