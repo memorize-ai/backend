@@ -1,4 +1,4 @@
-import * as sendgrid from '@sendgrid/mail'
+import sendgrid from '@sendgrid/mail'
 
 import { SENDGRID_API_KEY, SUPPORT_EMAIL } from '../constants'
 
@@ -21,7 +21,7 @@ export interface EmailOptions {
 	to: EmailUser
 	from?: EmailUser
 	replyTo?: EmailUser
-	context?: Record<string, any>
+	context?: Record<string, unknown>
 }
 
 export const DEFAULT_FROM: EmailUser = {
@@ -58,8 +58,7 @@ export const emailOptionsToMessage = ({
 
 export const sendEmail = (options: EmailOptions | EmailOptions[]) =>
 	sendgrid.send(
-		(Array.isArray(options)
+		Array.isArray(options)
 			? options.map(emailOptionsToMessage)
 			: emailOptionsToMessage(options)
-		) as any
 	)

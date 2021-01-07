@@ -1,15 +1,16 @@
 {
 	"compilerOptions": {
 		"module": "commonjs",
-		"noImplicitReturns": true,
-		"noUnusedLocals": true,
-		"outDir": "lib",
-		"sourceMap": true,
-		"strict": true,
 		"target": "es2017",
+		"outDir": "lib",
+		"strict": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
 		"skipLibCheck": true,
-		"incremental": true
+		"incremental": true,
+		"baseUrl": "src"
 	},
 	"compileOnSave": true,
+	"exclude": ["node_modules"],
 	"include": ["src"]
 }

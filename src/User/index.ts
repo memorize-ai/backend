@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin'
+import admin from 'firebase-admin'
 import { v4 as uuid } from 'uuid'
 
 import { sendEmail, EmailTemplate, EmailUser, DEFAULT_FROM } from '../Email'
@@ -12,14 +12,14 @@ export default class User {
 	static xp = {
 		deckDownload: 1,
 		reviewCard: 1,
-		
+
 		rating_1: -5,
 		rating_2: -2,
 		rating_3: 1,
 		rating_4: 4,
 		rating_5: 10
 	}
-	
+
 	id: string
 	name: string
 	email: string
@@ -30,11 +30,11 @@ export default class User {
 	numberOfDecks: number
 	interests: string[]
 	allDecks: string[]
-	
+
 	constructor(snapshot: FirebaseFirestore.DocumentSnapshot) {
 		if (!snapshot.exists)
 			throw new Error(`There are no users with ID "${snapshot.id}"`)
-		
+
 		this.id = snapshot.id
 		this.name = snapshot.get('name')
 		this.email = snapshot.get('email')
@@ -46,49 +46,46 @@ export default class User {
 		this.interests = snapshot.get('topics') ?? []
 		this.allDecks = snapshot.get('allDecks') ?? []
 	}
-	
+
 	static fromId = async (id: string) =>
 		new User(await firestore.doc(`users/${id}`).get())
-	
+
 	static fromEmail = async (email: string) => {
 		const { docs } = await firestore
 			.collection('users')
 			.where('email', '==', email)
 			.limit(1)
 			.get()
-		
+
 		const snapshot = docs[0]
-		
-		if (snapshot)
-			return new User(snapshot)
-		
+
+		if (snapshot) return new User(snapshot)
+
 		throw new Error(`There are no users with email "${email}"`)
 	}
-	
-	static incrementDeckCount = (uid: string, amount: number = 1) =>
+
+	static incrementDeckCount = (uid: string, amount = 1) =>
 		firestore.doc(`users/${uid}`).update({
 			deckCount: admin.firestore.FieldValue.increment(amount)
 		})
-	
-	static decrementDeckCount = (uid: string, amount: number = 1) =>
+
+	static decrementDeckCount = (uid: string, amount = 1) =>
 		User.incrementDeckCount(uid, -amount)
-	
-	static addXP = (uid: string, amount: number = 1) =>
+
+	static addXP = (uid: string, amount = 1) =>
 		firestore.doc(`users/${uid}`).update({
 			xp: admin.firestore.FieldValue.increment(amount)
 		})
-	
-	static subtractXP = (uid: string, amount: number = 1) =>
-		User.addXP(uid, -amount)
-	
-	static incrementCounter = (amount: number = 1) =>
+
+	static subtractXP = (uid: string, amount = 1) => User.addXP(uid, -amount)
+
+	static incrementCounter = (amount = 1) =>
 		firestore.doc('counters/users').update({
 			value: admin.firestore.FieldValue.increment(amount)
 		})
-	
-	static decrementCounter = (amount: number = 1) =>
-		User.incrementCounter(-amount)
-	
+
+	static decrementCounter = (amount = 1) => User.incrementCounter(-amount)
+
 	sendSignUpNotification = () =>
 		sendEmail({
 			template: EmailTemplate.UserSignUpNotification,
@@ -103,10 +100,10 @@ export default class User {
 				}
 			}
 		})
-	
+
 	onCreate = () => {
 		this.apiKey = uuid()
-		
+
 		return Promise.all([
 			User.incrementCounter(),
 			this.normalizeDisplayName(),
@@ -127,35 +124,33 @@ export default class User {
 			})
 		])
 	}
-	
+
 	onDelete = () =>
 		Promise.all([
 			this.removeAuth(),
 			firestore.doc(`apiKeys/${this.apiKey}`).delete()
 		])
-	
+
 	addDeckToAllDecks = (deckId: string) =>
 		firestore.doc(`users/${this.id}`).update({
 			allDecks: admin.firestore.FieldValue.arrayUnion(deckId)
 		})
-	
+
 	removeDeckFromAllDecks = (deckId: string) =>
 		firestore.doc(`users/${this.id}`).update({
 			allDecks: admin.firestore.FieldValue.arrayRemove(deckId)
 		})
-	
+
 	updateAuthDisplayName = (name: string) =>
 		auth.updateUser(this.id, { displayName: name })
-	
-	normalizeDisplayName = () =>
-		this.updateAuthDisplayName(this.name)
-	
-	removeAuth = () =>
-		auth.deleteUser(this.id)
-	
+
+	normalizeDisplayName = () => this.updateAuthDisplayName(this.name)
+
+	removeAuth = () => auth.deleteUser(this.id)
+
 	didBlockUserWithId = async (id: string) =>
 		(await firestore.doc(`users/${this.id}/blocked/${id}`).get()).exists
-	
+
 	get json() {
 		return {
 			id: this.id,
@@ -165,7 +160,7 @@ export default class User {
 			all_decks: this.allDecks
 		}
 	}
-	
+
 	get emailUser(): EmailUser {
 		return {
 			name: this.name,

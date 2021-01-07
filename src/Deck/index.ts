@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin'
+import admin from 'firebase-admin'
 import Batch from 'firestore-batch'
 import { isEqual } from 'lodash'
 
@@ -13,7 +13,7 @@ const storage = admin.storage().bucket()
 export default class Deck {
 	static defaultImageUrl = 'https://memorize.ai/images/logos/square.png'
 	static defaultImageUrlJpeg = 'https://memorize.ai/images/logos/square.jpg'
-	
+
 	id: string
 	slugId: string
 	slug: string
@@ -40,14 +40,14 @@ export default class Deck {
 	creatorId: string
 	dateCreated: Date
 	dateLastUpdated: Date
-	
+
 	canPostCard: number
 	nextPostedCardIndex: number
-	
+
 	constructor(snapshot: FirebaseFirestore.DocumentSnapshot) {
 		if (!snapshot.exists)
 			throw new Error(`There are no decks with ID "${snapshot.id}"`)
-		
+
 		this.id = snapshot.id
 		this.slugId = snapshot.get('slugId')
 		this.slug = snapshot.get('slug')
@@ -74,332 +74,345 @@ export default class Deck {
 		this.creatorId = snapshot.get('creator')
 		this.dateCreated = snapshot.get('created')?.toDate()
 		this.dateLastUpdated = snapshot.get('updated')?.toDate()
-		
+
 		this.canPostCard = snapshot.get('canPostCard') ?? false
 		this.nextPostedCardIndex = snapshot.get('nextPostedCardIndex') ?? 0
 	}
-	
+
 	get score() {
 		return (
 			this.numberOfViews +
-			this.numberOfUniqueViews * 1.5 +
-			this.numberOfRatings * 5 +
-			this.averageRating * 15 +
-			this.numberOfDownloads * 7.5 +
-			this.numberOfCards / 2 +
-			this.numberOfCurrentUsers * 5,
+				this.numberOfUniqueViews * 1.5 +
+				this.numberOfRatings * 5 +
+				this.averageRating * 15 +
+				this.numberOfDownloads * 7.5 +
+				this.numberOfCards / 2 +
+				this.numberOfCurrentUsers * 5,
 			this.numberOfFavorites * 2.5
 		)
 	}
-	
+
 	static fromId = async (id: string) =>
 		new Deck(await firestore.doc(`decks/${id}`).get())
-	
+
 	static fromSlugId = async (slugId: string) => {
 		const { empty, docs } = await firestore
 			.collection('decks')
 			.where('slugId', '==', slugId)
 			.limit(1)
 			.get()
-		
-		if (empty)
-			throw new Error(`There are no decks with slugId "${slugId}"`)
-		
+
+		if (empty) throw new Error(`There are no decks with slugId "${slugId}"`)
+
 		return new Deck(docs[0])
 	}
-	
+
 	static decrementDueCardCount = (uid: string, deckId: string) =>
 		firestore.doc(`users/${uid}/decks/${deckId}`).update({
 			dueCardCount: admin.firestore.FieldValue.increment(-1)
 		})
-	
-	static updateDueCardCount = (uid: string, deckId: string, dueCardCount: number) =>
-		firestore.doc(`users/${uid}/decks/${deckId}`).update({ dueCardCount })
-	
+
+	static updateDueCardCount = (
+		uid: string,
+		deckId: string,
+		dueCardCount: number
+	) => firestore.doc(`users/${uid}/decks/${deckId}`).update({ dueCardCount })
+
 	static addUserToCurrentUsers = (deckId: string, uid: string) =>
 		firestore.doc(`decks/${deckId}/currentUsers/${uid}`).set({})
-	
+
 	static removeUserFromCurrentUsers = (deckId: string, uid: string) =>
 		firestore.doc(`decks/${deckId}/currentUsers/${uid}`).delete()
-	
+
 	static currentUsers = async (deckId: string) =>
-		(await firestore.collection(`decks/${deckId}/currentUsers`).get())
-			.docs
-			.map(({ id }) => id)
-	
-	static addInitialCardsToUserNode = async (uid: string, deckId: string, sectionIds: string[]) => {
+		(await firestore.collection(`decks/${deckId}/currentUsers`).get()).docs.map(
+			({ id }) => id
+		)
+
+	static addInitialCardsToUserNode = async (
+		uid: string,
+		deckId: string,
+		sectionIds: string[]
+	) => {
 		const batch = new Batch(firestore)
-		
+
 		const { docs: unsectionedCards } = await firestore
 			.collection(`decks/${deckId}/cards`)
 			.where('section', '==', Section.unsectionedId)
 			.get()
-		
+
 		for (const { id: cardId } of unsectionedCards)
-			batch.set(
-				firestore.doc(`users/${uid}/decks/${deckId}/cards/${cardId}`),
-				{ new: true, section: Section.unsectionedId, due: new Date }
-			)
-		
+			batch.set(firestore.doc(`users/${uid}/decks/${deckId}/cards/${cardId}`), {
+				new: true,
+				section: Section.unsectionedId,
+				due: new Date()
+			})
+
 		for (const sectionId of sectionIds) {
 			const { docs: cards } = await firestore
 				.collection(`decks/${deckId}/cards`)
 				.where('section', '==', sectionId)
 				.get()
-			
+
 			for (const { id: cardId } of cards)
 				batch.set(
 					firestore.doc(`users/${uid}/decks/${deckId}/cards/${cardId}`),
-					{ new: true, section: sectionId, due: new Date }
+					{ new: true, section: sectionId, due: new Date() }
 				)
 		}
-		
+
 		return batch.commit()
 	}
-	
-	static addSectionToUserNode = async (uid: string, deckId: string, sectionId: string) => {
+
+	static addSectionToUserNode = async (
+		uid: string,
+		deckId: string,
+		sectionId: string
+	) => {
 		const { docs: cards } = await firestore
 			.collection(`decks/${deckId}/cards`)
 			.where('section', '==', sectionId)
 			.get()
-		
+
 		const batch = new Batch(firestore)
-		
+
 		for (const { id: cardId } of cards)
-			batch.set(
-				firestore.doc(`users/${uid}/decks/${deckId}/cards/${cardId}`),
-				{ new: true, section: sectionId, due: new Date }
-			)
-		
+			batch.set(firestore.doc(`users/${uid}/decks/${deckId}/cards/${cardId}`), {
+				new: true,
+				section: sectionId,
+				due: new Date()
+			})
+
 		return batch.commit()
 	}
-	
-	static incrementCardCount = (deckId: string, amount: number = 1) =>
+
+	static incrementCardCount = (deckId: string, amount = 1) =>
 		firestore.doc(`decks/${deckId}`).update({
 			cardCount: admin.firestore.FieldValue.increment(amount)
 		})
-	
-	static decrementCardCount = (deckId: string, amount: number = 1) =>
+
+	static decrementCardCount = (deckId: string, amount = 1) =>
 		Deck.incrementCardCount(deckId, -amount)
-	
-	static incrementUnsectionedCardCount = (deckId: string, amount: number = 1) =>
+
+	static incrementUnsectionedCardCount = (deckId: string, amount = 1) =>
 		firestore.doc(`decks/${deckId}`).update({
 			unsectionedCardCount: admin.firestore.FieldValue.increment(amount)
 		})
-	
-	static decrementUnsectionedCardCount = (deckId: string, amount: number = 1) =>
+
+	static decrementUnsectionedCardCount = (deckId: string, amount = 1) =>
 		Deck.incrementUnsectionedCardCount(deckId, -amount)
-	
-	static fieldNameForRating = (rating: number) =>
-		`${rating}StarRatingCount`
-	
-	static incrementCurrentUserCount = (id: string, amount: number = 1) =>
+
+	static fieldNameForRating = (rating: number) => `${rating}StarRatingCount`
+
+	static incrementCurrentUserCount = (id: string, amount = 1) =>
 		firestore.doc(`decks/${id}`).update({
 			currentUserCount: admin.firestore.FieldValue.increment(amount)
 		})
-	
-	static decrementCurrentUserCount = (id: string, amount: number = 1) =>
+
+	static decrementCurrentUserCount = (id: string, amount = 1) =>
 		Deck.incrementCurrentUserCount(id, -amount)
-	
-	static incrementAllTimeUserCount = (id: string, amount: number = 1) =>
+
+	static incrementAllTimeUserCount = (id: string, amount = 1) =>
 		firestore.doc(`decks/${id}`).update({
 			allTimeUserCount: admin.firestore.FieldValue.increment(amount)
 		})
-	
+
 	static incrementDownloadCount = (deckId: string) =>
 		firestore.doc(`decks/${deckId}`).update({
 			downloadCount: admin.firestore.FieldValue.increment(1)
 		})
-	
+
 	updateLastUpdated = () => {
-		this.dateLastUpdated = new Date
-		
+		this.dateLastUpdated = new Date()
+
 		return firestore.doc(`decks/${this.id}`).update({
 			updated: admin.firestore.FieldValue.serverTimestamp()
 		})
 	}
-	
+
 	static updateRating = (
 		uid: string,
 		deckId: string,
 		oldRating: number | undefined,
 		newRating: number | undefined
 	) => {
-		if (oldRating === newRating)
-			return Promise.resolve(null)
-		
+		if (oldRating === newRating) return Promise.resolve(null)
+
 		const { FieldValue } = admin.firestore
-		
+
 		const documentReference = firestore.doc(`decks/${deckId}`)
 		const updateData: FirebaseFirestore.UpdateData = {}
-		
+
 		oldRating
-			? updateData[Deck.fieldNameForRating(oldRating)] = FieldValue.increment(-1)
-			: updateData.ratingCount = FieldValue.increment(1)
-		
+			? (updateData[Deck.fieldNameForRating(oldRating)] = FieldValue.increment(
+					-1
+			  ))
+			: (updateData.ratingCount = FieldValue.increment(1))
+
 		newRating
-			? updateData[Deck.fieldNameForRating(newRating)] = FieldValue.increment(1)
-			: updateData.ratingCount = FieldValue.increment(-1)
-		
+			? (updateData[Deck.fieldNameForRating(newRating)] = FieldValue.increment(
+					1
+			  ))
+			: (updateData.ratingCount = FieldValue.increment(-1))
+
 		return Promise.all([
-			documentReference.update(updateData)
+			documentReference
+				.update(updateData)
 				.then(() => Deck.fromId(deckId))
 				.then(deck => deck.updateAverageRating()),
 			User.addXP(
 				uid,
-				(newRating === undefined ? 0 : (User.xp as Record<string, number>)[`rating_${newRating}`]) -
-				(oldRating === undefined ? 0 : (User.xp as Record<string, number>)[`rating_${oldRating}`])
+				(newRating === undefined
+					? 0
+					: (User.xp as Record<string, number>)[`rating_${newRating}`]) -
+					(oldRating === undefined
+						? 0
+						: (User.xp as Record<string, number>)[`rating_${oldRating}`])
 			)
 		])
 	}
-	
+
 	static sectionIds = async (deckId: string) =>
-		(await firestore.collection(`decks/${deckId}/sections`).get())
-			.docs
-			.map(({ id }) => id)
-	
+		(await firestore.collection(`decks/${deckId}/sections`).get()).docs.map(
+			({ id }) => id
+		)
+
 	static delete = async (deckId: string) => {
 		const currentUserIds = await Deck.currentUsers(deckId)
 		const sectionIds = await Deck.sectionIds(deckId)
-		
+
 		const batch = new Batch(firestore)
-		
+
 		for (const uid of currentUserIds)
 			batch.delete(firestore.doc(`users/${uid}/decks/${deckId}`))
-		
+
 		for (const sectionId of sectionIds)
 			batch.delete(firestore.doc(`decks/${deckId}/sections/${sectionId}`))
-		
+
 		return batch.commit()
 	}
-	
+
 	static deleteFromStorage = (deckId: string) =>
 		Promise.all([
 			storage.file(`decks/${deckId}`).delete(),
 			storage.deleteFiles({ directory: `deck-assets/${deckId}` })
 		])
-	
-	static incrementCounter = (amount: number = 1) =>
+
+	static incrementCounter = (amount = 1) =>
 		firestore.doc('counters/decks').update({
 			value: admin.firestore.FieldValue.increment(amount)
 		})
-	
-	static decrementCounter = (amount: number = 1) =>
-		Deck.incrementCounter(-amount)
-	
+
+	static decrementCounter = (amount = 1) => Deck.incrementCounter(-amount)
+
 	get url() {
 		return `https://memorize.ai/d/${this.slugId}/${this.slug}`
 	}
-	
+
 	get imageUrl() {
-		return this.hasImage
-			? storageUrl(['decks', this.id])
-			: null
+		return this.hasImage ? storageUrl(['decks', this.id]) : null
 	}
-	
+
 	get = async (uid: string) => {
 		const { docs } = await firestore
 			.collection(`decks/${this.id}/sections`)
 			.where('index', '==', 0)
 			.limit(1)
 			.get()
-		
-		const section: (
-			admin.firestore.DocumentSnapshot | undefined
-		) = docs[0]
-		
+
+		const section: admin.firestore.DocumentSnapshot | undefined = docs[0]
+
 		const numberOfSectionedCards = section?.get('cardCount') ?? 0
-		const numberOfUnlockedCards = this.numberOfUnsectionedCards + numberOfSectionedCards
-		
-		const data: Record<string, any> = {
+		const numberOfUnlockedCards =
+			this.numberOfUnsectionedCards + numberOfSectionedCards
+
+		const data: Record<string, unknown> = {
 			added: admin.firestore.FieldValue.serverTimestamp(),
 			dueCardCount: numberOfUnlockedCards,
 			unsectionedDueCardCount: this.numberOfUnsectionedCards,
 			unlockedCardCount: numberOfUnlockedCards
 		}
-		
-		if (section)
-			data.sections = { [section.id]: numberOfSectionedCards }
-		
+
+		if (section) data.sections = { [section.id]: numberOfSectionedCards }
+
 		return firestore.doc(`users/${uid}/decks/${this.id}`).create(data)
 	}
-	
+
 	updateAverageRating = () => {
-		const sum = (
+		const sum =
 			this.numberOf1StarRatings +
 			this.numberOf2StarRatings +
 			this.numberOf3StarRatings +
 			this.numberOf4StarRatings +
 			this.numberOf5StarRatings
-		)
-		
+
 		return firestore.doc(`decks/${this.id}`).update({
 			averageRating: sum
-				? (
-					this.numberOf1StarRatings +
-					this.numberOf2StarRatings * 2 +
-					this.numberOf3StarRatings * 3 +
-					this.numberOf4StarRatings * 4 +
-					this.numberOf5StarRatings * 5
-				) / sum
+				? (this.numberOf1StarRatings +
+						this.numberOf2StarRatings * 2 +
+						this.numberOf3StarRatings * 3 +
+						this.numberOf4StarRatings * 4 +
+						this.numberOf5StarRatings * 5) /
+				  sum
 				: 0
 		})
 	}
-	
+
 	initializeNextPostedCard = () =>
 		firestore.doc(`decks/${this.id}`).update({
 			canPostCard: this.numberOfCards > 0,
 			nextPostedCardIndex: 0
 		})
-	
+
 	updateNextPostedCard = () =>
 		firestore.doc(`decks/${this.id}`).update({
 			canPostCard: this.numberOfCards > this.nextPostedCardIndex + 1,
 			nextPostedCardIndex: admin.firestore.FieldValue.increment(1)
 		})
-	
+
 	updateCanPostCard = () =>
 		firestore.doc(`decks/${this.id}`).update({
 			canPostCard: this.numberOfCards > this.nextPostedCardIndex
 		})
-	
+
 	index = async () =>
 		decksClient.createIndices(await this.transformDataForIndexing())
-	
-	deleteIndex = () =>
-		decksClient.deleteIndices(this.id)
-	
-	wasUpdatedByUser = (newDeck: Deck) => !(
-		isEqual(this.topics, newDeck.topics) &&
-		this.hasImage === newDeck.hasImage &&
-		this.name === newDeck.name &&
-		this.subtitle === newDeck.subtitle &&
-		this.description === newDeck.description &&
-		this.numberOfCards === newDeck.numberOfCards
-	)
-	
-	shouldIndex = (newDeck: Deck) => !(
-		this.slugId === newDeck.slugId &&
-		this.slug === newDeck.slug &&
-		isEqual(this.topics, newDeck.topics) &&
-		this.hasImage === newDeck.hasImage &&
-		this.name === newDeck.name &&
-		this.subtitle === newDeck.subtitle &&
-		this.description === newDeck.description &&
-		this.numberOfRatings === newDeck.numberOfRatings &&
-		this.averageRating === newDeck.averageRating &&
-		this.numberOfCards === newDeck.numberOfCards &&
-		this.numberOfCurrentUsers === newDeck.numberOfCurrentUsers &&
-		this.creatorId === newDeck.creatorId &&
-		this.score === newDeck.score
-	)
-	
+
+	deleteIndex = () => decksClient.deleteIndices(this.id)
+
+	wasUpdatedByUser = (newDeck: Deck) =>
+		!(
+			isEqual(this.topics, newDeck.topics) &&
+			this.hasImage === newDeck.hasImage &&
+			this.name === newDeck.name &&
+			this.subtitle === newDeck.subtitle &&
+			this.description === newDeck.description &&
+			this.numberOfCards === newDeck.numberOfCards
+		)
+
+	shouldIndex = (newDeck: Deck) =>
+		!(
+			this.slugId === newDeck.slugId &&
+			this.slug === newDeck.slug &&
+			isEqual(this.topics, newDeck.topics) &&
+			this.hasImage === newDeck.hasImage &&
+			this.name === newDeck.name &&
+			this.subtitle === newDeck.subtitle &&
+			this.description === newDeck.description &&
+			this.numberOfRatings === newDeck.numberOfRatings &&
+			this.averageRating === newDeck.averageRating &&
+			this.numberOfCards === newDeck.numberOfCards &&
+			this.numberOfCurrentUsers === newDeck.numberOfCurrentUsers &&
+			this.creatorId === newDeck.creatorId &&
+			this.score === newDeck.score
+		)
+
 	shouldUpdateCanPostCard = (newDeck: Deck) =>
 		this.numberOfCards !== newDeck.numberOfCards
-	
+
 	private transformDataForIndexing = async () => {
 		const creator = await User.fromId(this.creatorId)
-		
+
 		return {
 			id: this.id,
 			slug_id: this.slugId,
@@ -431,7 +444,7 @@ export default class Deck {
 			updated: this.dateLastUpdated
 		}
 	}
-	
+
 	get json() {
 		return {
 			id: this.id,

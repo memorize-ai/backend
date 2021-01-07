@@ -4,10 +4,7 @@ import Deck from '../../Deck'
 
 const router = Router()
 
-router.get('/deck', async (
-	{ query: { id, short_id: shortId } },
-	res
-) => {
+router.get('/deck', async ({ query: { id, short_id: shortId } }, res) => {
 	try {
 		switch ('string') {
 			case typeof id:
@@ -17,7 +14,9 @@ router.get('/deck', async (
 				res.json((await Deck.fromSlugId(shortId as string)).json)
 				break
 			default:
-				res.status(400).send('You must pass an "id" or "short_id" as query parameters')
+				res
+					.status(400)
+					.send('You must pass an "id" or "short_id" as query parameters')
 		}
 	} catch (error) {
 		console.error(error)

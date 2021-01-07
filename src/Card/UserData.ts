@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin'
+import admin from 'firebase-admin'
 
 import Section from '../Section'
 import Algorithm from '../Algorithm'
@@ -21,7 +21,7 @@ export default class CardUserData {
 		date: Date
 		next: Date
 	} | null
-	
+
 	constructor(snapshot?: FirebaseFirestore.DocumentSnapshot) {
 		this.isNew = snapshot?.get('new') ?? true
 		this.sectionId = snapshot?.get('section') ?? null
@@ -33,23 +33,25 @@ export default class CardUserData {
 		this.streak = snapshot?.get('streak') ?? 0
 		this.e = snapshot?.get('e') ?? Algorithm.DEFAULT_E
 		this.isMastered = snapshot?.get('mastered') ?? false
-		
+
 		const last = snapshot?.get('last') ?? null
-		
+
 		this.last = last && {
 			id: last.id,
 			date: last.date?.toDate(),
 			next: last.next?.toDate()
 		}
 	}
-	
+
 	static fromId = async (uid: string, deckId: string, cardId: string) =>
-		new CardUserData(await firestore.doc(`users/${uid}/decks/${deckId}/cards/${cardId}`).get())
-	
+		new CardUserData(
+			await firestore.doc(`users/${uid}/decks/${deckId}/cards/${cardId}`).get()
+		)
+
 	get isDue() {
 		return this.due.getTime() <= Date.now()
 	}
-	
+
 	get isUnsectioned() {
 		return this.sectionId === Section.unsectionedId
 	}

@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin'
+import admin from 'firebase-admin'
 
 import Deck from '../Deck'
 import Section from '../Section'
@@ -12,11 +12,11 @@ export default class Card {
 	back: string
 	numberOfViews: number
 	numberOfSkips: number
-	
+
 	constructor(snapshot: FirebaseFirestore.DocumentSnapshot) {
 		if (!snapshot.exists)
 			throw new Error(`There are no cards with ID "${snapshot.id}"`)
-		
+
 		this.id = snapshot.id
 		this.sectionId = snapshot.get('section')
 		this.front = snapshot.get('front')
@@ -24,29 +24,29 @@ export default class Card {
 		this.numberOfViews = snapshot.get('viewCount') ?? 0
 		this.numberOfSkips = snapshot.get('skipCount') ?? 0
 	}
-	
+
 	static fromId = async (cardId: string, deckId: string) =>
 		new Card(await firestore.doc(`decks/${deckId}/cards/${cardId}`).get())
-	
+
 	incrementDeckCardCount = Deck.incrementCardCount
 	decrementDeckCardCount = Deck.decrementCardCount
-	
+
 	get isUnsectioned() {
 		return this.sectionId === Section.unsectionedId
 	}
-	
-	incrementSectionCardCount = (deckId: string, amount: number = 1) =>
+
+	incrementSectionCardCount = (deckId: string, amount = 1) =>
 		this.isUnsectioned
 			? firestore.doc(`decks/${deckId}`).update({
-				unsectionedCardCount: admin.firestore.FieldValue.increment(amount)
-			})
+					unsectionedCardCount: admin.firestore.FieldValue.increment(amount)
+			  })
 			: firestore.doc(`decks/${deckId}/sections/${this.sectionId}`).update({
-				cardCount: admin.firestore.FieldValue.increment(amount)
-			})
-	
-	decrementSectionCardCount = (deckId: string, amount: number = 1) =>
+					cardCount: admin.firestore.FieldValue.increment(amount)
+			  })
+
+	decrementSectionCardCount = (deckId: string, amount = 1) =>
 		this.incrementSectionCardCount(deckId, -amount)
-	
+
 	get json() {
 		return {
 			id: this.id,

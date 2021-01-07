@@ -15,8 +15,7 @@ router.get('/topic', async ({ query: { id, name, category } }, res) => {
 				break
 			case typeof category:
 				res.json(
-					(await Topic.fromCategory(category as string))
-						.map(({ json }) => json)
+					(await Topic.fromCategory(category as string)).map(({ json }) => json)
 				)
 				break
 			default:

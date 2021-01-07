@@ -16,9 +16,9 @@ const functionUrl = (name: string) =>
 
 export default async () => {
 	try {
-		await Promise.all(FUNCTIONS.map(name =>
-			axios.post(functionUrl(name), BODY)
-		))
+		await Promise.all(
+			FUNCTIONS.map(name => axios.post(functionUrl(name), BODY))
+		)
 	} catch (error) {
 		const message = error.response?.data
 		throw message ? new Error(message) : error
