@@ -1,7 +1,9 @@
 import admin from 'firebase-admin'
 import { v4 as uuid } from 'uuid'
+import { nanoid } from 'nanoid'
 
 import { sendEmail, EmailTemplate, EmailUser, DEFAULT_FROM } from '../Email'
+import { slugify } from '../utils'
 
 const auth = admin.auth()
 const firestore = admin.firestore()
@@ -9,6 +11,8 @@ const firestore = admin.firestore()
 export type UserSource = 'web' | 'ios'
 
 export default class User {
+	static readonly SLUG_ID_LENGTH = 10
+
 	static xp = {
 		deckDownload: 1,
 		reviewCard: 1,
@@ -21,6 +25,8 @@ export default class User {
 	}
 
 	id: string
+	slugId: string | null
+	slug: string | null
 	name: string
 	email: string
 	source: UserSource
@@ -36,6 +42,8 @@ export default class User {
 			throw new Error(`There are no users with ID "${snapshot.id}"`)
 
 		this.id = snapshot.id
+		this.slugId = snapshot.get('slugId') ?? null
+		this.slug = snapshot.get('slug') ?? null
 		this.name = snapshot.get('name')
 		this.email = snapshot.get('email')
 		this.source = snapshot.get('source') ?? 'ios'
@@ -86,8 +94,8 @@ export default class User {
 
 	static decrementCounter = (amount = 1) => User.incrementCounter(-amount)
 
-	sendSignUpNotification = () =>
-		sendEmail({
+	sendSignUpNotification = async () => {
+		await sendEmail({
 			template: EmailTemplate.UserSignUpNotification,
 			to: DEFAULT_FROM,
 			replyTo: this.emailUser,
@@ -100,36 +108,23 @@ export default class User {
 				}
 			}
 		})
+	}
 
-	onCreate = () => {
+	onCreate = async () => {
 		this.apiKey = uuid()
 
-		return Promise.all([
+		await Promise.all([
 			User.incrementCounter(),
 			this.normalizeDisplayName(),
 			this.sendSignUpNotification(),
-			firestore.doc(`users/${this.id}`).update({
-				source: this.source,
-				apiKey: this.apiKey,
-				allowContact: this.allowContact,
-				muted: this.isMuted,
-				unsubscribed: {
-					[EmailTemplate.DueCardsNotification]: false
-				}
-			}),
-			firestore.doc(`apiKeys/${this.apiKey}`).set({
-				user: this.id,
-				requests: 0,
-				enabled: true
-			})
+			this.createUserData(),
+			this.createApiKey()
 		])
 	}
 
-	onDelete = () =>
-		Promise.all([
-			this.removeAuth(),
-			firestore.doc(`apiKeys/${this.apiKey}`).delete()
-		])
+	onDelete = async () => {
+		await Promise.all([this.removeAuth(), this.removeApiKey()])
+	}
 
 	addDeckToAllDecks = (deckId: string) =>
 		firestore.doc(`users/${this.id}`).update({
@@ -150,6 +145,40 @@ export default class User {
 
 	didBlockUserWithId = async (id: string) =>
 		(await firestore.doc(`users/${this.id}/blocked/${id}`).get()).exists
+
+	private createUserData = async () => {
+		await firestore.doc(`users/${this.id}`).update({
+			...this.getSlug(),
+			source: this.source,
+			apiKey: this.apiKey,
+			allowContact: this.allowContact,
+			muted: this.isMuted,
+			unsubscribed: {
+				[EmailTemplate.DueCardsNotification]: false
+			}
+		})
+	}
+
+	private getSlug = () => {
+		if (this.slugId && this.slug) return null
+
+		this.slugId = nanoid(User.SLUG_ID_LENGTH)
+		this.slug = slugify(this.name)
+
+		return { slugId: this.slugId, slug: this.slug }
+	}
+
+	private createApiKey = async () => {
+		firestore.doc(`apiKeys/${this.apiKey}`).set({
+			user: this.id,
+			requests: 0,
+			enabled: true
+		})
+	}
+
+	private removeApiKey = async () => {
+		await firestore.doc(`apiKeys/${this.apiKey}`).delete()
+	}
 
 	get json() {
 		return {

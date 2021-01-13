@@ -1,5 +1,4 @@
 import { https } from 'firebase-functions'
-import { Response } from 'express'
 
 import {
 	PING_KEY,
@@ -38,15 +37,9 @@ export const storageUrl = (pathComponents: string[], token?: string) =>
 		'%2F'
 	)}?alt=media${token ? `&token=${token}` : ''}`
 
-export const setCacheControl = (
-	res: Response,
-	seconds: number,
-	shared: boolean
-) =>
-	res.set(
-		'Cache-Control',
-		`public, max-age=${seconds}${shared ? `, s-maxage=${seconds}` : ''}`
-	)
-
-export const setContentType = (res: Response, contentType: string | null) =>
-	contentType ? res.set('Content-Type', contentType) : res
+export const slugify = (string: string, delimiter = '-') =>
+	string
+		.replace(/[\s\:\/\?#@\[\]\-_!\$&'\(\)\*\+\.\,;=]+/g, ' ') // eslint-disable-line
+		.trim()
+		.replace(/\s+/g, delimiter)
+		.toLowerCase() || delimiter.repeat(string.length)
