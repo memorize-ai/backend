@@ -27,6 +27,7 @@ export default class User {
 	id: string
 	slugId: string | null
 	slug: string | null
+	hasImage: boolean
 	name: string
 	email: string
 	source: UserSource
@@ -44,6 +45,7 @@ export default class User {
 		this.id = snapshot.id
 		this.slugId = snapshot.get('slugId') ?? null
 		this.slug = snapshot.get('slug') ?? null
+		this.hasImage = snapshot.get('hasImage') ?? false
 		this.name = snapshot.get('name')
 		this.email = snapshot.get('email')
 		this.source = snapshot.get('source') ?? 'ios'
@@ -183,6 +185,9 @@ export default class User {
 	get json() {
 		return {
 			id: this.id,
+			short_id: this.slugId,
+			slug: this.slug,
+			has_image: this.hasImage,
 			name: this.name,
 			interests: this.interests,
 			decks: this.numberOfDecks,

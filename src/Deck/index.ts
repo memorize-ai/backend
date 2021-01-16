@@ -438,7 +438,8 @@ export default class Deck {
 			current_user_count: this.numberOfCurrentUsers,
 			all_time_user_count: this.numberOfAllTimeUsers,
 			favorite_count: this.numberOfFavorites,
-			creator_id: this.creatorId,
+			creator_id: creator.id,
+			creator_has_image: creator.hasImage,
 			creator_name: creator.name,
 			created: this.dateCreated,
 			updated: this.dateLastUpdated
