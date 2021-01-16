@@ -7,8 +7,10 @@ export const PRIVATE_KEY = config().app_search.decks_private_key
 export const client = new Client('host-fig55q', PRIVATE_KEY)
 
 export default {
-	createIndices: (documents: Record<string, unknown>[]): Promise<void> =>
-		client.indexDocuments(ENGINE_NAME, documents),
-	deleteIndices: (ids: string[]): Promise<void> =>
-		client.destroyDocuments(ENGINE_NAME, ids)
+	createIndices: async (documents: Record<string, unknown>[]) => {
+		await client.indexDocuments(ENGINE_NAME, documents)
+	},
+	deleteIndices: async (ids: string[]) => {
+		await client.destroyDocuments(ENGINE_NAME, ids)
+	}
 }

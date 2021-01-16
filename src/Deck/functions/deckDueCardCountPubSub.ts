@@ -43,10 +43,10 @@ const updateDueCardCounts = async (
 		dueCardCount: dueCards.length,
 		unsectionedDueCardCount: cardCountOfSection(Section.unsectionedId),
 		sections: Object.keys(deckUserData.get('sections') ?? {}).reduce(
-			(acc, sectionId) => ({
-				...acc,
-				[sectionId]: cardCountOfSection(sectionId)
-			}),
+			(acc: Record<string, number>, sectionId) => {
+				acc[sectionId] = cardCountOfSection(sectionId)
+				return acc
+			},
 			{}
 		)
 	})
