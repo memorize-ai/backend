@@ -97,6 +97,14 @@ export default class User {
 
 	static decrementCounter = (amount = 1) => User.incrementCounter(-amount)
 
+	static incrementCreatedDeckCount = (uid: string, amount = 1) =>
+		firestore.doc(`users/${uid}`).update({
+			createdDeckCount: admin.firestore.FieldValue.increment(amount)
+		})
+
+	static decrementCreatedDeckCount = (uid: string, amount = 1) =>
+		User.incrementCreatedDeckCount(uid, -amount)
+
 	sendSignUpNotification = async () => {
 		await sendEmail({
 			template: EmailTemplate.UserSignUpNotification,

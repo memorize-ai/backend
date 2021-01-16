@@ -1,16 +1,18 @@
 import * as functions from 'firebase-functions'
 
 import Deck from '..'
+import User from '../../User'
 import { cauterize } from '../../utils'
 
 export default functions.firestore.document('decks/{deckId}').onCreate(
-	cauterize(snapshot => {
+	cauterize(async snapshot => {
 		const deck = new Deck(snapshot)
 
-		return Promise.all([
+		await Promise.all([
 			deck.index(),
 			deck.initializeNextPostedCard(),
-			Deck.incrementCounter()
+			Deck.incrementCounter(),
+			User.incrementCreatedDeckCount(deck.creatorId)
 		])
 	})
 )
