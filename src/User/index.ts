@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 
 import { sendEmail, EmailTemplate, EmailUser, DEFAULT_FROM } from '../Email'
 import { slugify } from '../utils'
+import Deck from 'Deck'
 
 const auth = admin.auth()
 const firestore = admin.firestore()
@@ -125,7 +126,32 @@ export default class User {
 	}
 
 	onDelete = async () => {
-		await Promise.all([this.removeAuth(), this.removeApiKey()])
+		await Promise.all([
+			this.removeAuth(),
+			this.removeApiKey(),
+			this.removeCreatedDecks()
+		])
+	}
+
+	getCreatedDecks = async () => {
+		const { docs } = await firestore
+			.collection('decks')
+			.where('creator', '==', this.id)
+			.get()
+
+		return docs.map(snapshot => new Deck(snapshot))
+	}
+
+	indexCreatedDecks = async () => {
+		await Deck.index(await this.getCreatedDecks(), this)
+	}
+
+	removeCreatedDecks = async () => {
+		const decks = await this.getCreatedDecks()
+
+		await Promise.all(
+			decks.map(({ id }) => firestore.doc(`decks/${id}`).delete())
+		)
 	}
 
 	addDeckToAllDecks = (deckId: string) =>

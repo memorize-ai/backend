@@ -107,6 +107,18 @@ export default class Deck {
 		return new Deck(docs[0])
 	}
 
+	static index = async (decks: Deck[], creator?: User) => {
+		const documents = await Promise.all(
+			decks.map(deck => deck.transformDataForIndexing(creator))
+		)
+
+		await decksClient.createIndices(documents)
+	}
+
+	static deleteIndices = async (decks: Deck[]) => {
+		await decksClient.deleteIndices(decks.map(({ id }) => id))
+	}
+
 	static decrementDueCardCount = (uid: string, deckId: string) =>
 		firestore.doc(`users/${uid}/decks/${deckId}`).update({
 			dueCardCount: admin.firestore.FieldValue.increment(-1)
@@ -375,10 +387,8 @@ export default class Deck {
 			canPostCard: this.numberOfCards > this.nextPostedCardIndex
 		})
 
-	index = async () =>
-		decksClient.createIndices(await this.transformDataForIndexing())
-
-	deleteIndex = () => decksClient.deleteIndices(this.id)
+	index = (creator?: User) => Deck.index([this], creator)
+	deleteIndex = () => Deck.deleteIndices([this])
 
 	wasUpdatedByUser = (newDeck: Deck) =>
 		!(
@@ -410,8 +420,8 @@ export default class Deck {
 	shouldUpdateCanPostCard = (newDeck: Deck) =>
 		this.numberOfCards !== newDeck.numberOfCards
 
-	private transformDataForIndexing = async () => {
-		const creator = await User.fromId(this.creatorId)
+	private transformDataForIndexing = async (_creator?: User) => {
+		const creator = _creator ?? (await User.fromId(this.creatorId))
 
 		return {
 			id: this.id,
