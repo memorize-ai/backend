@@ -2,9 +2,9 @@ import admin from 'firebase-admin'
 import { v4 as uuid } from 'uuid'
 import { nanoid } from 'nanoid'
 
+import Deck from '../Deck'
 import { sendEmail, EmailTemplate, EmailUser, DEFAULT_FROM } from '../Email'
 import { slugify } from '../utils'
-import Deck from 'Deck'
 
 const auth = admin.auth()
 const firestore = admin.firestore()
