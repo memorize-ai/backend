@@ -1,8 +1,8 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import Batch from 'firestore-batch'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default class Section {
 	static unsectionedId = ''

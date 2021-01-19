@@ -1,12 +1,13 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import Batch from 'firestore-batch'
 
 import Card from '..'
 import Deck from '../../Deck'
 import { cauterize } from '../../utils'
 
-const firestore = admin.firestore()
+const { FieldValue } = firebase.firestore
+const firestore = firebase.firestore()
 
 export default functions.firestore
 	.document('decks/{deckId}/cards/{cardId}')
@@ -46,17 +47,17 @@ const createUserNodeCards = async (deck: Deck, card: Card) => {
 			)
 
 			const updateData: FirebaseFirestore.UpdateData = {
-				unlockedCardCount: admin.firestore.FieldValue.increment(1)
+				unlockedCardCount: FieldValue.increment(1)
 			}
 
 			// Don't update the due card counts if you're the creator, because it would have already been updated client-side
 			if (uid !== deck.creatorId) {
-				updateData.dueCardCount = admin.firestore.FieldValue.increment(1)
+				updateData.dueCardCount = FieldValue.increment(1)
 				updateData[
 					card.isUnsectioned
 						? 'unsectionedDueCardCount'
 						: `sections.${card.sectionId}`
-				] = admin.firestore.FieldValue.increment(1)
+				] = FieldValue.increment(1)
 			}
 
 			batch.update(userDeckRef, updateData)

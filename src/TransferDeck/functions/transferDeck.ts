@@ -1,12 +1,12 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import User from '../../User'
 import Deck from '../../Deck'
 import { URL_REGEX } from '..'
 import { ADMIN_KEY, SUPPORT_ID } from '../../constants'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default functions.https.onRequest(
 	async ({ method, headers, body }, res) => {

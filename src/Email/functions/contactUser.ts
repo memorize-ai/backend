@@ -1,12 +1,12 @@
 import { https } from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import User from '../../User'
 import { sendEmail, EmailTemplate } from '../../Email'
 import { pingable } from '../../utils'
 
 const { onCall, HttpsError } = https
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default onCall(
 	pingable(async (data, { auth }) => {

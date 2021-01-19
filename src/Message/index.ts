@@ -1,8 +1,9 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
-const firestore = admin.firestore()
+const { FieldValue } = firebase.firestore
+const firestore = firebase.firestore()
 
 export const modifyCounter = (increment: number) =>
 	firestore.doc('counters/messages').update({
-		value: admin.firestore.FieldValue.increment(increment)
+		value: FieldValue.increment(increment)
 	})

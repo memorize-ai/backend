@@ -1,10 +1,10 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import { Router } from 'express'
 
 import Card from '../../Card'
 
 const router = Router()
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 router.get(
 	'/card',

@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import { sendEmail, EmailTemplate, EmailOptions } from '..'
 import User from '../../User'
@@ -8,7 +8,7 @@ import DeckUserData from '../../Deck/UserData'
 
 const EMAIL_TEMPLATE = EmailTemplate.DueCardsNotification
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 // Every Monday at 12:00 PM
 export default functions.pubsub.schedule('0 12 * * 1').onRun(async () => {

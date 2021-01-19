@@ -1,10 +1,10 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import { RequestHandler } from 'express'
 
 import { SUPPORT_EMAIL } from '../constants'
 
-const { FieldValue } = admin.firestore
-const firestore = admin.firestore()
+const { FieldValue } = firebase.firestore
+const firestore = firebase.firestore()
 
 const verifyApiKey: RequestHandler = async ({ query: { key } }, res, next) => {
 	if (typeof key !== 'string') {

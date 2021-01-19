@@ -1,12 +1,12 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import Batch from 'firestore-batch'
 
 import Card from '..'
 import Deck from '../../Deck'
 import { cauterize } from '../../utils'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default functions.firestore
 	.document('decks/{deckId}/cards/{cardId}')

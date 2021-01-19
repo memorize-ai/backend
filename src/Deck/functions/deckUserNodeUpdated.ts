@@ -1,11 +1,12 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import Deck from '..'
 import DeckUserData from '../UserData'
 import { cauterize } from '../../utils'
 
-const firestore = admin.firestore()
+const { FieldValue } = firebase.firestore
+const firestore = firebase.firestore()
 
 export default functions.firestore
 	.document('users/{uid}/decks/{deckId}')
@@ -39,7 +40,7 @@ const updateFavorites = (
 	return before.get('favorite') === isFavorite
 		? Promise.resolve(null)
 		: firestore.doc(`decks/${deckId}`).update({
-				favoriteCount: admin.firestore.FieldValue.increment(isFavorite ? 1 : -1)
+				favoriteCount: FieldValue.increment(isFavorite ? 1 : -1)
 		  })
 }
 

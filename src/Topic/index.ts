@@ -1,6 +1,6 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default class Topic {
 	id: string

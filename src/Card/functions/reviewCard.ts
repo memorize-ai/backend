@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import Algorithm from '../../Algorithm'
 import PerformanceRating, {
@@ -18,7 +18,8 @@ type UpdateCard = (
 	viewTime: number
 ) => Promise<boolean>
 
-const firestore = admin.firestore()
+const { FieldValue } = firebase.firestore
+const firestore = firebase.firestore()
 
 // Returns if the user newly mastered the card
 export default functions.https.onCall(
@@ -71,15 +72,15 @@ export default functions.https.onCall(
 					)
 				),
 				firestore.doc(`users/${uid}/decks/${deckId}`).update({
-					dueCardCount: admin.firestore.FieldValue.increment(-1),
+					dueCardCount: FieldValue.increment(-1),
 					[sectionId === Section.unsectionedId
 						? 'unsectionedDueCardCount'
-						: `sections.${sectionId}`]: admin.firestore.FieldValue.increment(-1)
+						: `sections.${sectionId}`]: FieldValue.increment(-1)
 				}),
 				firestore.doc(`users/${uid}/activity/${day}`).set(
 					{
 						day,
-						value: admin.firestore.FieldValue.increment(1)
+						value: FieldValue.increment(1)
 					},
 					{ merge: true }
 				)
@@ -157,9 +158,9 @@ const updateExistingCard: UpdateCard = async (
 
 	const data: Record<string, unknown> = {
 		due: next,
-		totalCount: admin.firestore.FieldValue.increment(1),
-		correctCount: admin.firestore.FieldValue.increment(Number(isCorrect)),
-		streak: isCorrect ? admin.firestore.FieldValue.increment(1) : 0,
+		totalCount: FieldValue.increment(1),
+		correctCount: FieldValue.increment(Number(isCorrect)),
+		streak: isCorrect ? FieldValue.increment(1) : 0,
 		e,
 		mastered,
 		last: {
@@ -171,13 +172,13 @@ const updateExistingCard: UpdateCard = async (
 
 	switch (rating) {
 		case PerformanceRating.Easy:
-			data.easyCount = admin.firestore.FieldValue.increment(1)
+			data.easyCount = FieldValue.increment(1)
 			break
 		case PerformanceRating.Struggled:
-			data.struggledCount = admin.firestore.FieldValue.increment(1)
+			data.struggledCount = FieldValue.increment(1)
 			break
 		case PerformanceRating.Forgot:
-			data.forgotCount = admin.firestore.FieldValue.increment(1)
+			data.forgotCount = FieldValue.increment(1)
 			break
 	}
 

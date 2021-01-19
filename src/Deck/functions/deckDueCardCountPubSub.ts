@@ -1,11 +1,11 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import { DECK_DUE_CARD_COUNT_SCHEDULE } from '../../constants'
 import Section from '../../Section'
 import { cauterize } from '../../utils'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default functions.pubsub.schedule(DECK_DUE_CARD_COUNT_SCHEDULE).onRun(
 	cauterize(async () => {

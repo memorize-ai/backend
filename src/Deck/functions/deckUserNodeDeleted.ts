@@ -1,12 +1,12 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import Batch from 'firestore-batch'
 
 import Deck from '..'
 import User from '../../User'
 import { cauterize } from '../../utils'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default functions
 	.runWith({ timeoutSeconds: 540, memory: '2GB' })

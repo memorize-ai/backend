@@ -1,4 +1,4 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import { v4 as uuid } from 'uuid'
 import { nanoid } from 'nanoid'
 
@@ -6,8 +6,10 @@ import Deck from '../Deck'
 import { sendEmail, EmailTemplate, EmailUser, DEFAULT_FROM } from '../Email'
 import { slugify } from '../utils'
 
-const auth = admin.auth()
-const firestore = admin.firestore()
+const { FieldValue } = firebase.firestore
+
+const auth = firebase.auth()
+const firestore = firebase.firestore()
 
 export type UserSource = 'web' | 'ios'
 
@@ -77,7 +79,7 @@ export default class User {
 
 	static incrementDeckCount = (uid: string, amount = 1) =>
 		firestore.doc(`users/${uid}`).update({
-			deckCount: admin.firestore.FieldValue.increment(amount)
+			deckCount: FieldValue.increment(amount)
 		})
 
 	static decrementDeckCount = (uid: string, amount = 1) =>
@@ -85,21 +87,21 @@ export default class User {
 
 	static addXP = (uid: string, amount = 1) =>
 		firestore.doc(`users/${uid}`).update({
-			xp: admin.firestore.FieldValue.increment(amount)
+			xp: FieldValue.increment(amount)
 		})
 
 	static subtractXP = (uid: string, amount = 1) => User.addXP(uid, -amount)
 
 	static incrementCounter = (amount = 1) =>
 		firestore.doc('counters/users').update({
-			value: admin.firestore.FieldValue.increment(amount)
+			value: FieldValue.increment(amount)
 		})
 
 	static decrementCounter = (amount = 1) => User.incrementCounter(-amount)
 
 	static incrementCreatedDeckCount = (uid: string, amount = 1) =>
 		firestore.doc(`users/${uid}`).update({
-			createdDeckCount: admin.firestore.FieldValue.increment(amount)
+			createdDeckCount: FieldValue.increment(amount)
 		})
 
 	static decrementCreatedDeckCount = (uid: string, amount = 1) =>
@@ -164,12 +166,12 @@ export default class User {
 
 	addDeckToAllDecks = (deckId: string) =>
 		firestore.doc(`users/${this.id}`).update({
-			allDecks: admin.firestore.FieldValue.arrayUnion(deckId)
+			allDecks: FieldValue.arrayUnion(deckId)
 		})
 
 	removeDeckFromAllDecks = (deckId: string) =>
 		firestore.doc(`users/${this.id}`).update({
-			allDecks: admin.firestore.FieldValue.arrayRemove(deckId)
+			allDecks: FieldValue.arrayRemove(deckId)
 		})
 
 	updateAuthDisplayName = (name: string) =>

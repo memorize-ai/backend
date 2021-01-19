@@ -1,9 +1,9 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import Section from '../Section'
 import Algorithm from '../Algorithm'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export default class CardUserData {
 	isNew: boolean

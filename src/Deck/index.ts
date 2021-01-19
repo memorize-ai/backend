@@ -1,4 +1,4 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import Batch from 'firestore-batch'
 import { isEqual } from 'lodash'
 
@@ -7,8 +7,10 @@ import User from '../User'
 import Section from '../Section'
 import { storageUrl } from '../utils'
 
-const firestore = admin.firestore()
-const storage = admin.storage().bucket()
+const { FieldValue } = firebase.firestore
+
+const firestore = firebase.firestore()
+const storage = firebase.storage().bucket()
 
 export default class Deck {
 	static defaultImageUrl = 'https://memorize.ai/images/logos/square.png'
@@ -121,7 +123,7 @@ export default class Deck {
 
 	static decrementDueCardCount = (uid: string, deckId: string) =>
 		firestore.doc(`users/${uid}/decks/${deckId}`).update({
-			dueCardCount: admin.firestore.FieldValue.increment(-1)
+			dueCardCount: FieldValue.increment(-1)
 		})
 
 	static updateDueCardCount = (
@@ -200,7 +202,7 @@ export default class Deck {
 
 	static incrementCardCount = (deckId: string, amount = 1) =>
 		firestore.doc(`decks/${deckId}`).update({
-			cardCount: admin.firestore.FieldValue.increment(amount)
+			cardCount: FieldValue.increment(amount)
 		})
 
 	static decrementCardCount = (deckId: string, amount = 1) =>
@@ -208,7 +210,7 @@ export default class Deck {
 
 	static incrementUnsectionedCardCount = (deckId: string, amount = 1) =>
 		firestore.doc(`decks/${deckId}`).update({
-			unsectionedCardCount: admin.firestore.FieldValue.increment(amount)
+			unsectionedCardCount: FieldValue.increment(amount)
 		})
 
 	static decrementUnsectionedCardCount = (deckId: string, amount = 1) =>
@@ -218,7 +220,7 @@ export default class Deck {
 
 	static incrementCurrentUserCount = (id: string, amount = 1) =>
 		firestore.doc(`decks/${id}`).update({
-			currentUserCount: admin.firestore.FieldValue.increment(amount)
+			currentUserCount: FieldValue.increment(amount)
 		})
 
 	static decrementCurrentUserCount = (id: string, amount = 1) =>
@@ -226,19 +228,19 @@ export default class Deck {
 
 	static incrementAllTimeUserCount = (id: string, amount = 1) =>
 		firestore.doc(`decks/${id}`).update({
-			allTimeUserCount: admin.firestore.FieldValue.increment(amount)
+			allTimeUserCount: FieldValue.increment(amount)
 		})
 
 	static incrementDownloadCount = (deckId: string) =>
 		firestore.doc(`decks/${deckId}`).update({
-			downloadCount: admin.firestore.FieldValue.increment(1)
+			downloadCount: FieldValue.increment(1)
 		})
 
 	updateLastUpdated = () => {
 		this.dateLastUpdated = new Date()
 
 		return firestore.doc(`decks/${this.id}`).update({
-			updated: admin.firestore.FieldValue.serverTimestamp()
+			updated: FieldValue.serverTimestamp()
 		})
 	}
 
@@ -249,8 +251,6 @@ export default class Deck {
 		newRating: number | undefined
 	) => {
 		if (oldRating === newRating) return Promise.resolve(null)
-
-		const { FieldValue } = admin.firestore
 
 		const documentReference = firestore.doc(`decks/${deckId}`)
 		const updateData: FirebaseFirestore.UpdateData = {}
@@ -312,7 +312,7 @@ export default class Deck {
 
 	static incrementCounter = (amount = 1) =>
 		firestore.doc('counters/decks').update({
-			value: admin.firestore.FieldValue.increment(amount)
+			value: FieldValue.increment(amount)
 		})
 
 	static decrementCounter = (amount = 1) => Deck.incrementCounter(-amount)
@@ -332,14 +332,14 @@ export default class Deck {
 			.limit(1)
 			.get()
 
-		const section: admin.firestore.DocumentSnapshot | undefined = docs[0]
+		const section: FirebaseFirestore.DocumentSnapshot | undefined = docs[0]
 
 		const numberOfSectionedCards = section?.get('cardCount') ?? 0
 		const numberOfUnlockedCards =
 			this.numberOfUnsectionedCards + numberOfSectionedCards
 
 		const data: Record<string, unknown> = {
-			added: admin.firestore.FieldValue.serverTimestamp(),
+			added: FieldValue.serverTimestamp(),
 			dueCardCount: numberOfUnlockedCards,
 			unsectionedDueCardCount: this.numberOfUnsectionedCards,
 			unlockedCardCount: numberOfUnlockedCards
@@ -379,7 +379,7 @@ export default class Deck {
 	updateNextPostedCard = () =>
 		firestore.doc(`decks/${this.id}`).update({
 			canPostCard: this.numberOfCards > this.nextPostedCardIndex + 1,
-			nextPostedCardIndex: admin.firestore.FieldValue.increment(1)
+			nextPostedCardIndex: FieldValue.increment(1)
 		})
 
 	updateCanPostCard = () =>

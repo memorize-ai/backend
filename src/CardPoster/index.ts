@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions'
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 import Twitter from 'twitter'
 import stripHtml from 'string-strip-html'
 
@@ -9,7 +9,7 @@ import Card from '../Card'
 import User from '../User'
 import Topic from '../Topic'
 
-const firestore = admin.firestore()
+const firestore = firebase.firestore()
 
 export interface Fact {
 	deck: Deck

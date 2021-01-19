@@ -1,9 +1,10 @@
-import admin from 'firebase-admin'
+import firebase from 'firebase-admin'
 
 import Deck from '../Deck'
 import Section from '../Section'
 
-const firestore = admin.firestore()
+const { FieldValue } = firebase.firestore
+const firestore = firebase.firestore()
 
 export default class Card {
 	id: string
@@ -38,10 +39,10 @@ export default class Card {
 	incrementSectionCardCount = (deckId: string, amount = 1) =>
 		this.isUnsectioned
 			? firestore.doc(`decks/${deckId}`).update({
-					unsectionedCardCount: admin.firestore.FieldValue.increment(amount)
+					unsectionedCardCount: FieldValue.increment(amount)
 			  })
 			: firestore.doc(`decks/${deckId}/sections/${this.sectionId}`).update({
-					cardCount: admin.firestore.FieldValue.increment(amount)
+					cardCount: FieldValue.increment(amount)
 			  })
 
 	decrementSectionCardCount = (deckId: string, amount = 1) =>
