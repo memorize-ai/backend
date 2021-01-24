@@ -144,6 +144,7 @@ const onDeck = async (
 			.where('due', '<=', new Date())
 			.get()
 
+		const total = cards.length
 		const unsectionedDueCardCount = getCardCount(cards, Section.unsectionedId)
 
 		let didChange =
@@ -168,13 +169,13 @@ const onDeck = async (
 		if (!didChange) return null
 
 		await ref.update({
-			dueCardCount: cards.length,
-			unsectionedDueCardCount: getCardCount(cards, Section.unsectionedId),
+			dueCardCount: total,
+			unsectionedDueCardCount,
 			sections: userData.sections
 		})
 
 		return showNotification
-			? { deck: await getDeck(userData.id), total: cards.length, delta }
+			? { deck: await getDeck(userData.id), total, delta }
 			: null
 	} catch (error) {
 		console.error(error)
