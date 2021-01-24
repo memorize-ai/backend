@@ -2,6 +2,11 @@ import firebase from 'firebase-admin'
 import { v4 as uuid } from 'uuid'
 import { nanoid } from 'nanoid'
 
+import Notifications, { DEFAULT_USER_NOTIFICATIONS } from './Notifications'
+import {
+	createNotifications,
+	NotificationOptions
+} from '../Notifications/Notification'
 import Deck from '../Deck'
 import { sendEmail, EmailTemplate, EmailUser, DEFAULT_FROM } from '../Email'
 import { slugify } from '../utils'
@@ -10,6 +15,8 @@ const { FieldValue } = firebase.firestore
 
 const auth = firebase.auth()
 const firestore = firebase.firestore()
+
+const tokenCache: Record<string, string[]> = {}
 
 export type UserSource = 'web' | 'ios'
 
@@ -40,6 +47,7 @@ export default class User {
 	numberOfDecks: number
 	interests: string[]
 	allDecks: string[]
+	notifications: Notifications
 
 	constructor(snapshot: FirebaseFirestore.DocumentSnapshot) {
 		if (!snapshot.exists)
@@ -58,6 +66,8 @@ export default class User {
 		this.numberOfDecks = snapshot.get('deckCount') ?? 0
 		this.interests = snapshot.get('topics') ?? []
 		this.allDecks = snapshot.get('allDecks') ?? []
+		this.notifications =
+			snapshot.get('notifications') ?? DEFAULT_USER_NOTIFICATIONS
 	}
 
 	static fromId = async (id: string) =>
@@ -184,6 +194,16 @@ export default class User {
 	didBlockUserWithId = async (id: string) =>
 		(await firestore.doc(`users/${this.id}/blocked/${id}`).get()).exists
 
+	getTokens = async () =>
+		Object.prototype.hasOwnProperty.call(tokenCache, this.id)
+			? tokenCache[this.id]
+			: (tokenCache[this.id] = (
+					await firestore.collection(`users/${this.id}/tokens`).get()
+			  ).docs.map(({ id }) => id))
+
+	notification = async (options: NotificationOptions) =>
+		createNotifications(await this.getTokens(), options)
+
 	private createUserData = async () => {
 		await firestore.doc(`users/${this.id}`).update({
 			...this.getSlug(),
@@ -191,9 +211,7 @@ export default class User {
 			apiKey: this.apiKey,
 			allowContact: this.allowContact,
 			muted: this.isMuted,
-			unsubscribed: {
-				[EmailTemplate.DueCardsNotification]: false
-			}
+			notifications: DEFAULT_USER_NOTIFICATIONS
 		})
 	}
 

@@ -1,6 +1,6 @@
 import firebase from 'firebase-admin'
 import Batch from 'firestore-batch'
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 
 import decksClient from '../AppSearch/decks'
 import User from '../User'

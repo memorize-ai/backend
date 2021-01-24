@@ -4,7 +4,14 @@ import { RequestHandler } from 'express'
 import { SUPPORT_EMAIL } from '../constants'
 
 const { FieldValue } = firebase.firestore
+
 const firestore = firebase.firestore()
+const snapshots: Record<string, FirebaseFirestore.DocumentSnapshot> = {}
+
+const getSnapshot = async (key: string) =>
+	Object.prototype.hasOwnProperty.call(snapshots, key)
+		? snapshots[key]
+		: (snapshots[key] = await firestore.doc(`apiKeys/${key}`).get())
 
 const verifyApiKey: RequestHandler = async ({ query: { key } }, res, next) => {
 	if (typeof key !== 'string') {
@@ -14,7 +21,7 @@ const verifyApiKey: RequestHandler = async ({ query: { key } }, res, next) => {
 		return
 	}
 
-	const snapshot = await firestore.doc(`apiKeys/${key}`).get()
+	const snapshot = await getSnapshot(key)
 
 	if (!snapshot.exists) {
 		res.status(401).send('Invalid API key')
