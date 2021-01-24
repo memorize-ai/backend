@@ -5,13 +5,17 @@ import getNotification from '..'
 import Notification, { sendNotifications } from '../Notification'
 import { cauterize } from '../../utils'
 
-const TIME_STEP = 5
+const TIME_STEP = 15
 const SCHEDULE = `*/${TIME_STEP} * * * *`
 
 const firestore = firebase.firestore()
+let userSnapshots: FirebaseFirestore.DocumentSnapshot[] | null = null
+
+const getUserSnapshots = async () =>
+	(userSnapshots ??= (await firestore.collection('users').get()).docs)
 
 const collect = async () => {
-	const { docs: users } = await firestore.collection('users').get()
+	const users = await getUserSnapshots()
 	const notifications: Notification[] = []
 
 	await Promise.all(

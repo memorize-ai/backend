@@ -53,13 +53,32 @@ const shouldShowNotification = (user: User) => {
 			const date = new Date()
 			const startOfDay = getStartOfDay(date)
 
-			return (
+			const shouldShow =
 				days.includes(date.getDay() as FixedUserNotificationsDay) &&
 				compareMillisecondsToMinute(
 					date.getTime(),
 					startOfDay.getTime() + fixedTimeToMilliseconds(time)
 				)
-			)
+
+			if (user.email === 'kenmueller0@gmail.com') {
+				console.log(
+					'NOTIFICATION_LOG:',
+					JSON.stringify({
+						time,
+						timeMilliseconds: fixedTimeToMilliseconds(time),
+						days,
+						currentDay: date.getDay(),
+						currentTime: date.getTime(),
+						startTime: startOfDay.getTime(),
+						minuteComparison: compareMillisecondsToMinute(
+							date.getTime(),
+							startOfDay.getTime() + fixedTimeToMilliseconds(time)
+						)
+					})
+				)
+			}
+
+			return shouldShow
 		}
 		case 'none':
 			return false
@@ -148,8 +167,28 @@ const onDeck = async (
 			.where('due', '<=', new Date())
 			.get()
 
-		for (const sectionId in userData.sections)
-			userData.sections[sectionId] = getCardCount(cards, sectionId)
+		const unsectionedDueCardCount = getCardCount(cards, Section.unsectionedId)
+
+		let didChange =
+			unsectionedDueCardCount !== userData.numberOfUnsectionedDueCards
+
+		let delta = Math.max(
+			0,
+			unsectionedDueCardCount - userData.numberOfUnsectionedDueCards
+		)
+
+		for (const sectionId in userData.sections) {
+			const oldValue = userData.sections[sectionId]
+			const newValue = getCardCount(cards, sectionId)
+
+			if (oldValue === newValue) continue
+			userData.sections[sectionId] = newValue
+
+			didChange = true
+			delta += Math.max(0, newValue - oldValue)
+		}
+
+		if (!didChange) return null
 
 		await ref.update({
 			dueCardCount: cards.length,
@@ -157,13 +196,9 @@ const onDeck = async (
 			sections: userData.sections
 		})
 
-		if (!showNotification) return null
-
-		return {
-			deck: await getDeck(userData.id),
-			total: cards.length,
-			delta: cards.length - userData.numberOfDueCards
-		}
+		return showNotification
+			? { deck: await getDeck(userData.id), total: cards.length, delta }
+			: null
 	} catch (error) {
 		console.error(error)
 		return null
