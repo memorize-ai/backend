@@ -1,11 +1,10 @@
 import * as functions from 'firebase-functions'
 import firebase from 'firebase-admin'
 
-import getNotification from '..'
+import getNotification, { TIME_STEP } from '..'
 import Notification, { sendNotifications } from '../Notification'
 import { cauterize } from '../../utils'
 
-const TIME_STEP = 15
 const SCHEDULE = `*/${TIME_STEP} * * * *`
 
 const firestore = firebase.firestore()

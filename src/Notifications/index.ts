@@ -16,9 +16,13 @@ interface PayloadItem {
 	delta: number
 }
 
+export const TIME_STEP = 15
+
 const MILLISECONDS_IN_MINUTE = 1000 * 60
 const MILLISECONDS_IN_HOUR = MILLISECONDS_IN_MINUTE * 60
 const MILLISECONDS_IN_DAY = MILLISECONDS_IN_HOUR * 24
+
+const TIMEZONE_OFFSET = 480
 
 const firestore = firebase.firestore()
 const deckCache: Record<string, Deck> = {}
@@ -28,20 +32,17 @@ const getDeck = async (id: string) =>
 		? deckCache[id]
 		: (deckCache[id] = await Deck.fromId(id))
 
-const getStartOfDay = (date: Date) => {
-	const time = date.getTime()
-	const offset = time % MILLISECONDS_IN_DAY
-	const timezoneOffset = date.getTimezoneOffset() * MILLISECONDS_IN_MINUTE
-
-	return new Date(time - offset + timezoneOffset)
-}
+const timeSinceStartOfDay = (date: Date) =>
+	(date.getTime() % MILLISECONDS_IN_DAY) -
+	TIMEZONE_OFFSET * MILLISECONDS_IN_MINUTE
 
 const fixedTimeToMilliseconds = (time: FixedUserNotificationsTime) =>
 	time.hours * MILLISECONDS_IN_HOUR + time.minutes * MILLISECONDS_IN_MINUTE
 
-const compareMillisecondsToMinute = (a: number, b: number) =>
-	Math.floor(a / MILLISECONDS_IN_MINUTE) ===
-	Math.floor(b / MILLISECONDS_IN_MINUTE)
+const compareTime = (now: number, fixed: number) => {
+	const delta = now - fixed
+	return delta >= 0 && delta < TIME_STEP * MILLISECONDS_IN_MINUTE
+}
 
 const shouldShowNotification = (user: User) => {
 	switch (user.notifications.type) {
@@ -49,36 +50,12 @@ const shouldShowNotification = (user: User) => {
 			return true
 		case 'fixed': {
 			const { days, time } = user.notifications.fixed
-
 			const date = new Date()
-			const startOfDay = getStartOfDay(date)
 
-			const shouldShow =
+			return (
 				days.includes(date.getDay() as FixedUserNotificationsDay) &&
-				compareMillisecondsToMinute(
-					date.getTime(),
-					startOfDay.getTime() + fixedTimeToMilliseconds(time)
-				)
-
-			if (user.email === 'kenmueller0@gmail.com') {
-				console.log(
-					'NOTIFICATION_LOG:',
-					JSON.stringify({
-						time,
-						timeMilliseconds: fixedTimeToMilliseconds(time),
-						days,
-						currentDay: date.getDay(),
-						currentTime: date.getTime(),
-						startTime: startOfDay.getTime(),
-						minuteComparison: compareMillisecondsToMinute(
-							date.getTime(),
-							startOfDay.getTime() + fixedTimeToMilliseconds(time)
-						)
-					})
-				)
-			}
-
-			return shouldShow
+				compareTime(timeSinceStartOfDay(date), fixedTimeToMilliseconds(time))
+			)
 		}
 		case 'none':
 			return false
