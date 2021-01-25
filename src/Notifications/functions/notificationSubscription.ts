@@ -24,7 +24,12 @@ const collect = async () => {
 		})
 	)
 
-	await sendNotifications(notifications)
+	const chunks = await sendNotifications(notifications)
+
+	for (const { failureCount, responses } of chunks) {
+		if (!failureCount) continue
+		for (const { error } of responses) if (error) console.error(error)
+	}
 }
 
 export default functions

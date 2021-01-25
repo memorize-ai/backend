@@ -32,9 +32,16 @@ const getDeck = async (id: string) =>
 		? deckCache[id]
 		: (deckCache[id] = await Deck.fromId(id))
 
-const timeSinceStartOfDay = (date: Date) =>
-	(date.getTime() % MILLISECONDS_IN_DAY) -
-	TIMEZONE_OFFSET * MILLISECONDS_IN_MINUTE
+const getDate = () => {
+	const date = new Date()
+
+	const offset = TIMEZONE_OFFSET - date.getTimezoneOffset()
+	date.setTime(date.getTime() - offset * MILLISECONDS_IN_MINUTE)
+
+	return date
+}
+
+const timeSinceStartOfDay = (date: Date) => date.getTime() % MILLISECONDS_IN_DAY
 
 const fixedTimeToMilliseconds = (time: FixedUserNotificationsTime) =>
 	time.hours * MILLISECONDS_IN_HOUR + time.minutes * MILLISECONDS_IN_MINUTE
@@ -50,7 +57,7 @@ const shouldShowNotification = (user: User) => {
 			return true
 		case 'fixed': {
 			const { days, time } = user.notifications.fixed
-			const date = new Date()
+			const date = getDate()
 
 			return (
 				days.includes(date.getDay() as FixedUserNotificationsDay) &&
@@ -63,9 +70,12 @@ const shouldShowNotification = (user: User) => {
 }
 
 const getNotificationOptions = (
-	{ notifications: { type } }: User,
+	user: User,
 	items: PayloadItem[]
 ): NotificationOptions | null => {
+	const {
+		notifications: { type }
+	} = user
 	if (type === 'none') return null
 
 	const first = items[0]
@@ -166,13 +176,12 @@ const onDeck = async (
 			delta += Math.max(0, newValue - oldValue)
 		}
 
-		if (!didChange) return null
-
-		await ref.update({
-			dueCardCount: total,
-			unsectionedDueCardCount,
-			sections: userData.sections
-		})
+		if (didChange)
+			await ref.update({
+				dueCardCount: total,
+				unsectionedDueCardCount,
+				sections: userData.sections
+			})
 
 		return showNotification
 			? { deck: await getDeck(userData.id), total, delta }

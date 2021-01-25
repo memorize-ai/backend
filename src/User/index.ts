@@ -66,8 +66,14 @@ export default class User {
 		this.numberOfDecks = snapshot.get('deckCount') ?? 0
 		this.interests = snapshot.get('topics') ?? []
 		this.allDecks = snapshot.get('allDecks') ?? []
+
 		this.notifications =
 			snapshot.get('notifications') ?? DEFAULT_USER_NOTIFICATIONS
+
+		this.notifications.type ??= DEFAULT_USER_NOTIFICATIONS.type
+		this.notifications.fixed ??= DEFAULT_USER_NOTIFICATIONS.fixed
+		this.notifications.fixed.days ??= DEFAULT_USER_NOTIFICATIONS.fixed.days
+		this.notifications.fixed.time ??= DEFAULT_USER_NOTIFICATIONS.fixed.time
 	}
 
 	static fromId = async (id: string) =>

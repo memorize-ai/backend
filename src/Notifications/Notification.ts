@@ -29,9 +29,9 @@ export const createNotifications = (
 	options: NotificationOptions
 ) => tokens.map(token => createNotification(token, options))
 
-export const sendNotifications = async (notifications: Notification[]) => {
+export const sendNotifications = (notifications: Notification[]) => {
 	const chunks = chunk(notifications, CHUNK_SIZE)
-	await Promise.all(chunks.map(chunk => messaging.sendAll(chunk)))
+	return Promise.all(chunks.map(chunk => messaging.sendAll(chunk)))
 }
 
 export default Notification
