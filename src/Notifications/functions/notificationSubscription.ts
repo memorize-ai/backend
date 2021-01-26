@@ -8,13 +8,9 @@ import { cauterize } from '../../utils'
 const SCHEDULE = `*/${TIME_STEP} * * * *`
 
 const firestore = firebase.firestore()
-let userSnapshots: FirebaseFirestore.DocumentSnapshot[] | null = null
-
-const getUserSnapshots = async () =>
-	(userSnapshots ??= (await firestore.collection('users').get()).docs)
 
 const collect = async () => {
-	const users = await getUserSnapshots()
+	const { docs: users } = await firestore.collection('users').get()
 	const notifications: Notification[] = []
 
 	await Promise.all(
