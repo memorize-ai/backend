@@ -85,7 +85,7 @@ const getNotificationOptions = (
 
 	const body = `${total} card${total === 1 ? '' : 's'} in ${first.deck.name}${
 		items.length > 1
-			? ` and ${items.length - 1} more deck${items.length === 2 ? '' : 's'}`
+			? ` and ${items.length - 1} other deck${items.length === 2 ? '' : 's'}`
 			: ''
 	} ${total === 1 ? 'is' : 'are'} due`
 
